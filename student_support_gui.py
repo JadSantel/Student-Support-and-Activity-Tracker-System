@@ -120,12 +120,17 @@ def submit_user():
 
 #Refreshing User List for Logged Users
 def refresh_user_list():
-    if users:
-        user_combo.configure(values=[user.name for user in users])
-        user_combo.set(users[0].name)
+    names = [user.name for user in users]
+
+    user_combo.configure(values=names)
+
+    if names:
+        user_combo.set(names[-1])
+        log_btn.configure(state="normal")        
     else:
-        user_combo.configure(values=[])
         user_combo.set("")
+        log_btn.configure(state="disabled")
+        
 
 #Logging Activity
 def open_activity():
@@ -174,7 +179,10 @@ def submit_activity():
         if user.name == selected_name:
             user.add_points(selected_activity)
             messagebox.showinfo("Success", f"{selected_activity} logged for {user.name}")
-        return
+            refresh_summary()
+            return
+        
+    messagebox.showerror("Internal Error","Selected user was not found.")
 
 users = []
 
@@ -217,7 +225,7 @@ activity_combo = ctk.CTkComboBox(activity_frame,values=["Study", "Exercise", "Pr
 activity_combo.set("Study")
 activity_combo.pack(pady=5)
 
-log_btn = ctk.CTkButton(activity_frame, text="Log Activity",command=submit_activity)
+log_btn = ctk.CTkButton(activity_frame, text="Log Activity",command=submit_activity, state="disabled")
 log_btn.pack(pady=10)
 
 # Frame for Summary
