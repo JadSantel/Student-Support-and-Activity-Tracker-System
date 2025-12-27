@@ -1,0 +1,14 @@
+[
+    {
+        "name": "Jadon",
+        "age": 20,
+        "role": "Student",
+        "points": 0
+    },
+    {
+        "name": "Jaden",
+        "age": 8,
+        "role": "Student",
+        "points": 6
+    }
+]
