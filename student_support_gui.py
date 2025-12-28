@@ -217,8 +217,21 @@ def refresh_summary():
 
         ctk.CTkLabel(user_card,text=f"Points: {user.points}").pack(anchor="w",padx=10)
 
-        ctk.CTkLabel(user_card,text=f"Status: {user.get_status()}").pack(anchor="w",padx=10)
+        status = user.get_status()
 
+        if status == "Excellent":
+            color = "#34E710"
+        elif status == "Good":
+            color = "#32CD32"
+        elif status == "Needs Improvement":
+            color = "#FFD700"
+        else:
+            color = "#DC143C"
+        
+        ctk.CTkLabel(user_card, text=f"Status: {status}",
+                     text_color=color
+                     ).pack(anchor="w", padx=10)
+        
         button_row = ctk.CTkFrame(user_card)
         button_row.pack(pady=5) 
 
