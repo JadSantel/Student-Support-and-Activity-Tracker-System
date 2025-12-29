@@ -111,6 +111,11 @@ def submit_user():
         messagebox.showerror("Input Error","Invalid age.")
         return
     
+    for u in users:
+        if u.name.lower() == name.lower():
+            messagebox.showerror("Duplicate Name",f"The name '{name}' is already registered. Please use a unique name.")
+            return
+
     user = User(name, int(age), role)
     users.append(user)
 
@@ -124,6 +129,7 @@ def submit_user():
     refresh_summary()
     save_users_to_file()
 
+   
 
 #Refreshing User List for Logged Users
 def refresh_user_list():
@@ -199,24 +205,47 @@ def open_edit_user(user):
     ctk.CTkButton(edit_frame, text="Save Changes", command=apply_changes).pack(pady=15)
     
 #Updates the logged activities and users
-def refresh_summary():
+def refresh_summary(filter_text=""):
     for widget in summary_container.winfo_children():
         widget.destroy()
-    
-    if not users:
-        ctk.CTkLabel(summary_container,text="No registered users.").pack(pady=10)
+
+    filter_text = filter_text.lower().strip()
+
+    filtered_users = []
+    for u in users:
+
+        name_match = filter_text in u.name.lower()
+        role_match = filter_text in u.role.lower()
+        status_match = filter_text in u.get_status().lower()
+
+        points_match = False
+        if filter_text.startswith(">") and filter_text[1:].isdigit():
+            points_match = u.points > int(filter_text[1:])
+        elif filter_text.startswith("<") and filter_text[1:].isdigit():
+            points_match = u.points < int(filter_text[1:])
+        elif filter_text.startswith("=") and filter_text[1:].isdigit():
+            points_match = u.points == int(filter_text[1:])
+
+        range_match = False
+        if "-" in filter_text or " to " in filter_text:
+            parts = filter_text.replace(" to ", "-").split("-")
+            if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+                low, high = map(int, parts)
+                range_match = low <= u.points <= high
+
+        if (
+            not filter_text or
+            name_match or role_match or status_match or points_match or range_match
+        ):
+            filtered_users.append(u)
+
+    if not filtered_users:
+        ctk.CTkLabel(summary_container, text="No users found.", text_color="gray").pack(pady=10)
         return
-    
-    for user in users:
-        user_card = ctk.CTkFrame(summary_container, fg_color="#62676D")
-        user_card.pack(fill="x", pady=5, padx=5)
 
-        ctk.CTkLabel(user_card,text=f"Name: {user.name}").pack(anchor="w",padx=10)
+    filtered_users = sorted(filtered_users, key=lambda x: x.name.lower())
 
-        ctk.CTkLabel(user_card,text=f"Role: {user.role}").pack(anchor="w",padx=10)
-
-        ctk.CTkLabel(user_card,text=f"Points: {user.points}").pack(anchor="w",padx=10)
-
+    for user in filtered_users:
         status = user.get_status()
 
         if status == "Excellent":
@@ -225,25 +254,31 @@ def refresh_summary():
             color = "#32CD32"
         elif status == "Needs Improvement":
             color = "#FFD700"
-        else:
+        else: 
             color = "#DC143C"
-        
-        ctk.CTkLabel(user_card, text=f"Status: {status}",
-                     text_color=color
-                     ).pack(anchor="w", padx=10)
-        
+
+        user_card = ctk.CTkFrame(summary_container)
+        user_card.pack(fill="x", pady=5, padx=5)
+
+        ctk.CTkLabel(user_card, text=f"Name: {user.name}").pack(anchor="w", padx=10)
+        ctk.CTkLabel(user_card, text=f"Role: {user.role}").pack(anchor="w", padx=10)
+        ctk.CTkLabel(user_card, text=f"Points: {user.points}").pack(anchor="w", padx=10)
+        ctk.CTkLabel(user_card, text=f"Status: {status}", text_color=color).pack(anchor="w", padx=10)
+
         button_row = ctk.CTkFrame(user_card)
-        button_row.pack(pady=5) 
+        button_row.pack(pady=5)
 
-        delete_btn = ctk.CTkButton(button_row,text="Delete User",
-                                    fg_color="#B22222", hover_color="#8B0000",
-                                    command=lambda u=user: delete_user(u))
-        delete_btn.grid(row=0, column=0, padx=3)
+        ctk.CTkButton(
+            button_row, text="Edit",
+            fg_color="#1E90FF", hover_color="#1C86EE",
+            command=lambda u=user: open_edit_user(u)
+        ).grid(row=0, column=0, padx=3)
 
-        edit_btn = ctk.CTkButton(button_row,text="Edit User",
-                                   fg_color="#1E90FF", hover_color="#1C86EE",
-                                   command=lambda u=user: open_edit_user(u))
-        edit_btn.grid(row=0, column=1, padx=3)
+        ctk.CTkButton(
+            button_row, text="Delete",
+            fg_color="#B22222", hover_color="#8B0000",
+            command=lambda u=user: delete_user(u)
+        ).grid(row=0, column=1, padx=3)
 
 #Saving Users JSON
 def save_users_to_file(filename="users.json"):
@@ -383,6 +418,16 @@ log_btn.pack(pady=10)
 
 # Frame for Summary
 ctk.CTkLabel(summary_frame, text="User Summary", font=("Arial",18)).pack(pady=10)
+
+search_var = ctk.StringVar()
+
+def on_search(*args):
+    refresh_summary(search_var.get().strip())
+
+search_entry = ctk.CTkEntry(summary_frame, placeholder_text="Search by name...", textvariable=search_var)
+search_entry.pack(pady=5, fill="x", padx=10)
+
+search_var.trace("w", on_search)
 
 summary_container = ctk.CTkScrollableFrame(summary_frame, width=450, height=250)
 summary_container.pack(pady=10, fill="both",expand=True)
