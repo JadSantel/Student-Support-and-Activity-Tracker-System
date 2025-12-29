@@ -10,5 +10,11 @@
         "age": 8,
         "role": "Student",
         "points": 6
+    },
+    {
+        "name": "Jayat",
+        "age": 12,
+        "role": "Student",
+        "points": 0
     }
 ]
